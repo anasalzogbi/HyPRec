@@ -8,11 +8,7 @@ import numpy
 import time
 from optparse import OptionParser
 from lib.evaluator import Evaluator
-from lib.collaborative_filtering import CollaborativeFiltering
 from lib.grid_search import GridSearch
-from lib.LDA import LDARecommender
-from lib.LDA2Vec import LDA2VecRecommender
-from lib.SDAE import SDAERecommender
 from lib.recommender_system import RecommenderSystem
 from util.abstracts_preprocessor import AbstractsPreprocessor
 from util.data_parser import DataParser
@@ -72,6 +68,7 @@ class RunnableRecommenders(object):
         """
         Run LDA recommender.
         """
+        from lib.LDA import LDARecommender
         lda_recommender = LDARecommender(self.initializer, self.evaluator, self.hyperparameters, self.options,
                                          self.verbose, self.load_matrices, self.dump)
         results = lda_recommender.train()
@@ -85,6 +82,7 @@ class RunnableRecommenders(object):
         """
         Runs LDA2Vec recommender.
         """
+        from lib.LDA2Vec import LDA2VecRecommender
         lda2vec_recommender = LDA2VecRecommender(self.initializer, self.evaluator, self.hyperparameters,
                                                  self.options, self.verbose, self.load_matrices, self.dump)
         results = lda2vec_recommender.train()
@@ -98,6 +96,7 @@ class RunnableRecommenders(object):
         """
         Runs SDAE recommender.
         """
+        from lib.SDAE import SDAERecommender
         sdae_recommender = SDAERecommender(self.initializer, self.evaluator, self.hyperparameters,
                                            self.options, self.verbose, self.load_matrices, self.dump)
         results = sdae_recommender.train()
@@ -111,6 +110,7 @@ class RunnableRecommenders(object):
         """
         Runs collaborative filtering
         """
+        from lib.collaborative_filtering import CollaborativeFiltering
         ALS = CollaborativeFiltering(self.initializer, self.evaluator, self.hyperparameters, self.options,
                                      self.verbose, self.load_matrices, self.dump, self.train_more)
 

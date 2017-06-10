@@ -2,7 +2,7 @@
 	"database": {
 		"host": "localhost",
 		"user": "root",
-		"password": "",
+		"password": "root",
 		"database_name": "sahwaka"
 	},
 	"dataset": "citeulike-a",
