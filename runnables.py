@@ -121,6 +121,20 @@ class RunnableRecommenders(object):
                      'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
         print(report_str.format(*results))
 
+    def run_random(self):
+        from lib.random_recommender import RandomRecommender
+        """
+        Runs Random recommender
+        """
+        random = RandomRecommender(self.initializer, self.evaluator, self.hyperparameters, self.options,
+									   self.verbose, self.load_matrices, self.dump, self.train_more)
+        results = random.train()
+        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, ' \
+						 'test recall {:.5f}, recall@200 {:.5f}, ' \
+						 'ratio {:.5f}, mrr@5 {:.5f}, ' \
+						 'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
+        print(report_str.format(*results))
+
     def run_grid_search(self):
         """
         Runs grid search
@@ -304,6 +318,9 @@ if __name__ == '__main__':
             found_runnable = True
         elif arg == 'collaborative':
             runnable.run_collaborative()
+            found_runnable = True
+        elif arg == 'random':
+            runnable.run_random()
             found_runnable = True
         elif arg == 'grid_search':
             runnable.run_grid_search()
