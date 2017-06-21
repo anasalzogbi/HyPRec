@@ -15,7 +15,7 @@ from util.data_parser import DataParser
 from util.recommender_configuer import RecommenderConfiguration
 from util.model_initializer import ModelInitializer
 from util.runs_loader import RunsLoader
-
+from lib.RandomRecommender import RandomRecommender
 
 class RunnableRecommenders(object):
     """
@@ -115,6 +115,19 @@ class RunnableRecommenders(object):
                                      self.verbose, self.load_matrices, self.dump, self.train_more)
 
         results = ALS.train()
+        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
+                     'test recall {:.5f}, recall@200 {:.5f}, '\
+                     'ratio {:.5f}, mrr@5 {:.5f}, '\
+                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
+        print(report_str.format(*results))
+    def run_randomRecommender(self):
+        """
+        Runs Random Predictions Recommender
+        """
+        RR = RandomRecommender(self.initializer, self.evaluator, self.hyperparameters, self.options,
+                                     self.verbose, self.load_matrices, self.dump, self.train_more)
+
+        results = RR.train()
         report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
                      'test recall {:.5f}, recall@200 {:.5f}, '\
                      'ratio {:.5f}, mrr@5 {:.5f}, '\
@@ -317,6 +330,9 @@ if __name__ == '__main__':
         elif arg == 'experiment':
             runnable.run_experiment()
             found_runnable = True
+        elif arg == 'random':
+            runnable.run_randomRecommender()
+            found_runnable = True 
         elif arg == 'sdae':
             runnable.run_sdae()
             found_runnable = True
