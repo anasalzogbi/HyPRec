@@ -31,13 +31,7 @@ class RunnableRecommenders(object):
         dataParser = DataParser(10)
         if use_database:           
             self.ratings = numpy.array(dataParser.get_ratings_matrix())
-            #labeled rating matrix for ltr recommender
-            #self.labeled_ratings = numpy.array(DataParser.get_labeled_r(random))           
-            self.users, self.documents = self.ratings.shape
-            self.n_items = self.documents
-            #self.abstracts_preprocessor = AbstractsPreprocessor(self.n_items,
-                                                                #*dataParser.get_word_distribution())
-            word_to_count, article_to_word,article_to_word_to_count =   dataParser.get_word_distribution()
+            word_to_count, article_to_word,article_to_word_to_count = dataParser.get_word_distribution()
         else:
             abstracts = {0: 'hell world berlin dna evolution', 1: 'freiburg is green',
                          2: 'the best dna is the dna of dinasours', 3: 'truth is absolute',
@@ -53,8 +47,6 @@ class RunnableRecommenders(object):
             article_to_word_to_count = list(set([(doc_id, w2i[word], abstract.count(word))
                                                  for doc_id, abstract in abstracts.items()
                                                  for word in abstract.split(' ')]))
-            #self.abstracts_preprocessor = AbstractsPreprocessor(abstracts, word_to_count,
-                                                               # article_to_word, article_to_word_to_count)
             self.documents, self.users = 8, 10
             self.n_items =  self.documents
             self.ratings = numpy.array([[int(not bool((article + user) % 3))
@@ -66,103 +58,17 @@ class RunnableRecommenders(object):
         self.dump = dump
         self.train_more = train_more
         self.random_seed = random_seed
-        #self.evaluator = Evaluator(self.ratings, self.abstracts_preprocessor, self.random_seed, self.verbose)
-        #evaluator for LTR 
         self.n_users,self.n_docs = self.ratings.shape
+        #initialising the ltr evaluator
         self.evaluator_ltr = LTR_Evaluator(self.n_users,self.ratings)
-        #word_to_count, article_to_word, article_to_word_to_count = DataParser.get_word_distribution()
-           
+
         articles, words, counts = zip(*article_to_word_to_count)
-        num_items = self.n_items 
+        num_items = self.n_docs
         num_vocab = max(map(lambda inp: inp[0], word_to_count)) + 1
         
         self.term_freq = sparse.coo_matrix((counts, (articles, words)),shape=(num_items , num_vocab) ).tocsr()
 
-        
-        #self.config = RecommenderConfiguration()
-        #self.hyperparameters = self.config.get_hyperparameters()
-        #self.options = self.config.get_options()
-        #self.initializer = ModelInitializer(self.hyperparameters.copy(), self.options['n_iterations'], self.verbose)
 
-    def run_lda(self):
-        """
-        Run LDA recommender.
-        """
-        """
-        from lib.LDA import LDARecommender
-        lda_recommender = LDARecommender(self.initializer, self.evaluator, self.hyperparameters, self.options,
-                                         self.verbose, self.load_matrices, self.dump)
-        results = lda_recommender.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                     'test recall {:.5f}, recall@200 {:.5f}, '\
-                     'ratio {:.5f}, mrr@5 {:.5f}, '\
-                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        """
-    def run_lda2vec(self):
-        """
-        Runs LDA2Vec recommender.
-        """
-        """
-        from lib.LDA2Vec import LDA2VecRecommender
-        lda2vec_recommender = LDA2VecRecommender(self.initializer, self.evaluator, self.hyperparameters,
-                                                 self.options, self.verbose, self.load_matrices, self.dump)
-        results = lda2vec_recommender.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                     'test recall {:.5f}, recall@200 {:.5f}, '\
-                     'ratio {:.5f}, mrr@5 {:.5f}, '\
-                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        """
-
-    def run_sdae(self):
-        """
-        Runs SDAE recommender.
-        """
-        """
-        from lib.SDAE import SDAERecommender
-        sdae_recommender = SDAERecommender(self.initializer, self.evaluator, self.hyperparameters,
-                                           self.options, self.verbose, self.load_matrices, self.dump)
-        results = sdae_recommender.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                     'test recall {:.5f}, recall@200 {:.5f}, '\
-                     'ratio {:.5f}, mrr@5 {:.5f}, '\
-                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        """
-
-    def run_collaborative(self):
-        """
-        Runs collaborative filtering
-        """
-        """
-        from lib.collaborative_filtering import CollaborativeFiltering
-        ALS = CollaborativeFiltering(self.initializer, self.evaluator, self.hyperparameters, self.options,
-                                     self.verbose, self.load_matrices, self.dump, self.train_more)
-
-        results = ALS.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                     'test recall {:.5f}, recall@200 {:.5f}, '\
-                     'ratio {:.5f}, mrr@5 {:.5f}, '\
-                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        """
-
-    def run_random(self):
-        from lib.random_recommender import RandomRecommender
-        """
-        Runs Random recommender
-        """
-        """
-        random = RandomRecommender(self.initializer, self.evaluator, self.hyperparameters, self.options,
-									   self.verbose, self.load_matrices, self.dump, self.train_more)
-        results = random.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, ' \
-						 'test recall {:.5f}, recall@200 {:.5f}, ' \
-						 'ratio {:.5f}, mrr@5 {:.5f}, ' \
-						 'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        """
     def run_ltr_recommender(self):
         from lib.ltr_recommender import LTRRecommender 
         from lib.content_analyser import Content_Analyser 
@@ -171,25 +77,21 @@ class RunnableRecommenders(object):
         Runs LTR Recommender
         """
         n_folds = 5
-        split_strategy = "random"
-        #split_strategy = "pairwise"
-        #train_data and test_data shape (k,n_users,n_docs)
-        #k represent number of folds
-        
-        #k_fold_ratings = self.evaluator_ltr.generate_k_fold_matrices(self.ratings,n_folds)
-        k_fold_test_mask = self.evaluator_ltr.generate_k_fold_matrices(self.ratings,n_folds)
-        theta = Content_Analyser().get_document_distribution(self.term_freq)
-        sorted_sim_matrix = None
-        # getting pairwise cosine similarity matrix (sorted)
-        if(split_strategy == "pairwise"):
-          sorted_sim_matrix = Content_Analyser().get_sorted_cosine_sim(theta)
-        #Todo: better way to use test_data use only indices or sparse matrix
+        #peerpaper_search_strategy = "random"
+        peerpaper_search_strategy = "paper_based"
+
+        #k_fold_test_mask: boolean mask of shape (n_folds,n_users,n_docs)
+        k_fold_test_mask = self.evaluator_ltr.generate_k_fold_test_mask(self.ratings,n_folds)
+
+        theta = Content_Analyser.get_document_distribution(self.term_freq)
+        #sorted_documents_similarity: matrix of document to document similarity ofshape(n_docs,n_docs)
+        sparse_documents_similarity = None
+
+        if(peerpaper_search_strategy == "paper_based"):
+            sparse_documents_similarity = Content_Analyser.get_sorted_cosine_sim(theta)
+
         for fold in range(n_folds):
-        #  all_zeros = not numpy.any(test_data[fold])
-        #  if all_zeros:
-        #    continue
-          n_users,n_docs = k_fold_test_mask[fold].shape
-          ltr_recommender = LTRRecommender(n_users,n_docs,theta,split_strategy,sorted_sim_matrix , self.ratings)
+          ltr_recommender = LTRRecommender(self.n_users,self.n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity ,self.ratings)
           ltr_recommender.train(k_fold_test_mask[fold])
           predictions, prediction_scores = ltr_recommender.predict(k_fold_test_mask[fold])
           mrr_at_five = self.evaluator_ltr.calculate_mrr(5,predictions , prediction_scores , k_fold_test_mask[fold])
@@ -199,148 +101,6 @@ class RunnableRecommenders(object):
           predictions = None
           prediction_scores = None
           ltr_recommender = None
-
-    def run_grid_search(self):
-        """
-        Runs grid search
-        """
-        """
-        hyperparameters = {
-            '_lambda': [0.01],
-            'n_factors': [50, 100, 150, 200, 250, 300]
-        }
-        recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                        verbose=self.verbose, load_matrices=self.load_matrices,
-                                        dump_matrices=self.dump, train_more=self.train_more,
-                                        random_seed=self.random_seed)
-        GS = GridSearch(recommender, hyperparameters, self.verbose)
-        best_params, all_results = GS.train()"""
-
-    def run_recommender(self):
-        """
-        Runs recommender
-        """
-        """
-        recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                        verbose=self.verbose, load_matrices=self.load_matrices,
-                                        dump_matrices=self.dump, train_more=self.train_more,
-                                        random_seed=self.random_seed)
-        results = recommender.train()
-        report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                     'test recall {:.5f}, recall@200 {:.5f}, '\
-                     'ratio {:.5f}, mrr@5 {:.5f}, '\
-                     'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-        print(report_str.format(*results))
-        recommender.dump_recommendations(200)"""
-
-    def run_experiment(self):
-        """
-        Runs experiment
-        """
-        """
-        all_results = [['n_factors', '_lambda', 'desc', 'rmse', 'train_recall', 'test_recall', 'recall_at_200',
-                        'ratio', 'mrr @ 5', 'ndcg @ 5', 'mrr @ 10', 'ndcg @ 10']]
-        runs = RunsLoader()
-        for run_idx, config_dict in enumerate(runs.get_runnable_recommenders()):
-            if run_idx:
-                print("\n___________________________________________________________________________________________")
-            this_config = config_dict.copy()
-            recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                            config=this_config, verbose=self.verbose, load_matrices=self.load_matrices,
-                                            dump_matrices=self.dump, train_more=self.train_more,
-                                            random_seed=self.random_seed)
-            print("Run #%d %s: " % ((run_idx + 1), recommender.config.get_description()),
-                  recommender.content_based, recommender.collaborative_filtering,
-                  ", with: ", recommender.config.config_dict)
-            results = recommender.train()
-            report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                         'test recall {:.5f}, recall@200 {:.5f}, '\
-                         'ratio {:.5f}, mrr@5 {:.5f}, '\
-                         'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-            print(report_str.format(*results))
-            current_result = [recommender.hyperparameters['n_factors'], recommender.hyperparameters['_lambda'],
-                              recommender.config.get_description()]
-            current_result.extend(results)
-            all_results.append(current_result)
-        GridSearch(recommender, {}, self.verbose, report_name='experiment_results').dump_csv(all_results)
-        """
-
-    def run_experiment_with_gridsearch(self):
-        """
-        Runs experiment after running grid search.
-        """
-        """
-        print("Getting Userbased hyperparameters")
-        userbased_configs = {
-            '_lambda': [0.01],
-            'n_factors': [50, 100, 150, 200, 250, 300]
-        }
-        self.config.set_recommender_type('userbased')
-        self.config.set_iterations(5)
-        self.config.set_folds_num(1)
-        recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                        config=self.config.get_all_config(), verbose=self.verbose,
-                                        load_matrices=self.load_matrices, dump_matrices=False,
-                                        train_more=self.train_more, random_seed=self.random_seed)
-        userbased_hyperparameters, userbased_gridsearch_results =\
-            GridSearch(recommender, userbased_configs, self.verbose, report_name='grid_search_userbased').train()
-
-        print("Userbased hyperparameters:", userbased_hyperparameters)
-
-        print("Getting Itembased hyperparameters")
-        itembased_configs = {
-            '_lambda': [0.01],
-            'n_factors': [50, 100, 150, 200, 250, 300]
-        }
-        self.config.set_recommender_type('itembased')
-        recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                        config=self.config.get_all_config(), verbose=self.verbose,
-                                        load_matrices=self.load_matrices, dump_matrices=False,
-                                        train_more=self.train_more, random_seed=self.random_seed)
-        itembased_hyperparameters, itembased_gridsearch_results =\
-            GridSearch(recommender, itembased_configs, self.verbose, report_name='grid_search_itembased').train()
-
-        print("Itembased hyperparameters:", itembased_hyperparameters)
-
-        for _ in range(5):
-            print('.')
-        print('Grid search done...')
-        print('')
-        print("Userbased hyperparameters:", userbased_hyperparameters)
-        print("Itembased hyperparameters:", itembased_hyperparameters)
-
-        all_results = [['n_factors', '_lambda', 'desc', 'rmse', 'train_recall', 'test_recall', 'recall_at_200',
-                        'ratio', 'mrr @ 5', 'ndcg @ 5', 'mrr @ 10', 'ndcg @ 10']]
-        runs = RunsLoader()
-        for run_idx, config_dict in enumerate(runs.get_runnable_recommenders()):
-            if run_idx:
-                print("\n___________________________________________________________________________________________")
-            this_config = config_dict.copy()
-            if this_config['recommender']['recommender'] == 'itembased':
-                if itembased_hyperparameters:
-                    this_config['recommender']['hyperparameters'] = itembased_hyperparameters.copy()
-            elif this_config['recommender']['recommender'] == 'userbased':
-                if userbased_hyperparameters:
-                    this_config['recommender']['hyperparameters'] = userbased_hyperparameters.copy()
-            recommender = RecommenderSystem(abstracts_preprocessor=self.abstracts_preprocessor, ratings=self.ratings,
-                                            config=this_config, verbose=self.verbose, load_matrices=self.load_matrices,
-                                            dump_matrices=self.dump, train_more=self.train_more,
-                                            random_seed=self.random_seed)
-            print("Run #%d %s: " % ((run_idx + 1), recommender.config.get_description()),
-                  recommender.content_based, recommender.collaborative_filtering,
-                  ", with: ", recommender.config.config_dict)
-            results = recommender.train()
-            report_str = 'Summary: Test sum {:.2f}, Train sum {:.2f}, Final error {:.5f}, train recall {:.5f}, '\
-                         'test recall {:.5f}, recall@200 {:.5f}, '\
-                         'ratio {:.5f}, mrr@5 {:.5f}, '\
-                         'ndcg@5 {:.5f}, mrr@10 {:.5f}, ndcg@10 {:.5f}'
-            print(report_str.format(*results))
-            current_result = [recommender.hyperparameters['n_factors'], recommender.hyperparameters['_lambda'],
-                              recommender.config.get_description()]
-            current_result.extend(results)
-            all_results.append(current_result)
-        GridSearch(recommender, {}, self.verbose, report_name='experiment_results').dump_csv(all_results)
-        """
 
 
 if __name__ == '__main__':
@@ -373,45 +133,11 @@ if __name__ == '__main__':
         numpy.random.seed(int(time.time()))
     runnable = RunnableRecommenders(use_database, verbose, load_matrices, dump, train_more, random_seed)
     if use_all is True:
-        runnable.run_recommender()
-        runnable.run_collaborative()
-        runnable.run_grid_search()
-        runnable.run_lda()
-        runnable.run_lda2vec()
-        runnable.run_sdae()
-        runnable.run_experiment()
-        runnable.run_experiment_with_gridsearch()
+        runnable.run_ltr_recommender()
         sys.exit(0)
     found_runnable = False
     for arg in args:
-        if arg == 'recommender':
-            runnable.run_recommender()
-            found_runnable = True
-        elif arg == 'collaborative':
-            runnable.run_collaborative()
-            found_runnable = True
-        elif arg == 'random':
-            runnable.run_random()
-            found_runnable = True
-        elif arg == 'grid_search':
-            runnable.run_grid_search()
-            found_runnable = True
-        elif arg == 'lda':
-            runnable.run_lda()
-            found_runnable = True
-        elif arg == 'lda2vec':
-            runnable.run_lda2vec()
-            found_runnable = True
-        elif arg == 'experiment':
-            runnable.run_experiment()
-            found_runnable = True
-        elif arg == 'sdae':
-            runnable.run_sdae()
-            found_runnable = True
-        elif arg == 'experiment_with_gridsearch':
-            runnable.run_experiment_with_gridsearch()
-            found_runnable = True
-        elif arg == 'ltr':
+        if arg == 'ltr':
             runnable.run_ltr_recommender()
             found_runnable = True     
         else:
@@ -419,5 +145,4 @@ if __name__ == '__main__':
                   "['recommender', 'collaborative', 'grid_search', 'lda', 'lda2vec', 'experiment', "
                   "'sdae', 'experiment_with_gridsearch']" % arg)
     if found_runnable is False:
-        print("Didn't find any valid option, running recommender instead.")
-        runnable.run_recommender()
+        runnable.run_ltr_recommender()

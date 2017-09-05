@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 A module that provides functionalities for calculating error metrics
-and evaluates the given recommender.
+and evaluates the LTR recommender.
 """
 import numpy
 import math
@@ -18,48 +18,43 @@ class LTR_Evaluator(object):
       self.ratings = ratings
      
         
-    def generate_k_fold_matrices(self,rating_matrix,k):
+    def generate_k_fold_test_mask(self,rating_matrix,k):
       """
-      Generate k training and test matrices and returns them
+      Input: rating_matrix (n_users,n_docs)
+      Output: test_mask_matrix ( k, n_users, n_docs)
       """
       n_users,n_docs = rating_matrix.shape
       n_folds = k
       # initialising train and test matrices
-      test_mask = numpy.zeros((n_folds,n_users,n_docs) , dtype = bool)
-      #train_data = numpy.zeros((n_folds,n_users,n_docs))
-      #for x in range(n_folds):
-        #TODO: memory effic code
-       # train_data[x] = rating_matrix.copy()
-      #setting the train and test matrices
+      test_mask_matrix = numpy.zeros((n_folds,n_users,n_docs) , dtype = bool)
+
+      #setting the test_mask_matrix
       for user in range(n_users):
         rated_item_indices = rating_matrix[user].nonzero()[0]
         non_rated_indices = numpy.where(rating_matrix[user] == 0)[0]
         numpy.random.shuffle(rated_item_indices)
         numpy.random.shuffle(non_rated_indices)
         
-        count = math.floor((1.0 / n_folds) * len(rated_item_indices))
-        if (count == 0):
-           count = 1
-           
-        count2 = math.floor((1.0 / n_folds) * len(non_rated_indices))
-        #TODO: comment
+        number_ones_per_fold = math.floor((1.0 / n_folds) * len(rated_item_indices))
+        if (number_ones_per_fold == 0):
+           number_ones_per_fold = 1
+        number_zeros_per_fold = math.floor((1.0 / n_folds) * len(non_rated_indices))
+
         for k in range(n_folds):
             if (k+1) == n_folds:
               #test indices for rated items
-              test_indices = rated_item_indices[k*count :  ]
+              test_indices_ones = rated_item_indices[k*number_ones_per_fold :  ]
               #test indices for non rated items
-              test_indices_zeros = non_rated_indices[k*count2 :  ]
+              test_indices_zeros = non_rated_indices[k*number_zeros_per_fold :  ]
             else:
-              test_indices = rated_item_indices[k*count : (k+1)*count ]
-              test_indices_zeros = non_rated_indices[k*count2 : (k+1)*count2 ]
-            #train_indices = numpy.append(rated_item_indices[(k+1)*count :],rated_item_indices[:(k)*count] ) # deprecated
-            #train_data[k,user,test_indices] = 2
-            #train_data[k,user,test_indices_zeros] = 2
+              test_indices_ones = rated_item_indices[k*number_ones_per_fold : (k+1)*number_ones_per_fold ]
+              test_indices_zeros = non_rated_indices[k*number_zeros_per_fold : (k+1)*number_zeros_per_fold ]
+            #to calculate train_indices. keeping the code if needed in future
+            # train_indices = numpy.append(rated_item_indices[(k+1)*count :],rated_item_indices[:(k)*count] )
 
-            test_mask[k,user,test_indices] = True
-            test_mask[k,user,test_indices_zeros] = True
-      #return train_data,test_data
-      return test_mask
+            test_mask_matrix[k,user,test_indices_ones] = True
+            test_mask_matrix[k,user,test_indices_zeros] = True
+      return test_mask_matrix
       
     def calculate_mrr(self, n_recommendations, predictions, prediction_scores ,test_mask):
       """
