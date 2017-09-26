@@ -24,7 +24,7 @@ class RunnableRecommenders(object):
     A class that is used to run recommenders.
     """
     def __init__(self, use_database=True, verbose=True, load_matrices=True, dump=True, train_more=True,
-                 random_seed=False, config=None):
+                 random_seed=False,lda_topics=50 , n_peers=2, config=None):
         """
         Setup the data and configuration for the recommenders.
         """
@@ -58,6 +58,8 @@ class RunnableRecommenders(object):
         self.dump = dump
         self.train_more = train_more
         self.random_seed = random_seed
+        self.lda_topics = lda_topics
+        self.n_peers = n_peers
         self.n_users,self.n_docs = self.ratings.shape
         #initialising the ltr evaluator
         self.evaluator_ltr = LTR_Evaluator(self.n_users,self.ratings)
@@ -83,7 +85,7 @@ class RunnableRecommenders(object):
         #k_fold_test_mask: boolean mask of shape (n_folds,n_users,n_docs)
         k_fold_test_mask = self.evaluator_ltr.generate_k_fold_test_mask(self.ratings,n_folds)
 
-        theta = Content_Analyser.get_document_distribution(self.term_freq)
+        theta = Content_Analyser.get_document_distribution(self.term_freq,self.lda_topics)
         #sorted_documents_similarity: matrix of document to document similarity ofshape(n_docs,n_docs)
         sparse_documents_similarity = None
 
@@ -91,7 +93,7 @@ class RunnableRecommenders(object):
             sparse_documents_similarity = Content_Analyser.get_sorted_cosine_sim(theta)
 
         for fold in range(n_folds):
-          ltr_recommender = LTRRecommender(self.n_users,self.n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity ,self.ratings)
+          ltr_recommender = LTRRecommender(self.n_users,self.n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity ,self.ratings,self.n_peers)
           ltr_recommender.train(k_fold_test_mask[fold])
           predictions, prediction_scores = ltr_recommender.predict(k_fold_test_mask[fold])
           mrr_at_five = self.evaluator_ltr.calculate_mrr(5,predictions , prediction_scores , k_fold_test_mask[fold])
@@ -116,22 +118,30 @@ if __name__ == '__main__':
                       help="load saved models from files in matrices/", metavar="LOAD")
     parser.add_option("-v", "--verbose", dest="verbose", action='store_true',
                       help="print update statements during computations", metavar="VERBOSE")
-    parser.add_option("-t", "--train_more", dest="train_more", action='store_true',
-                      help="train the collaborative filtering more, after loading matrices", metavar="TRAINMORE")
     parser.add_option("-r", "--random_seed", dest="random_seed", action='store_true',
                       help="Set the seed to the current timestamp if true.", metavar="RANDOMSEED")
+    parser.add_option("-t", "--lda_topics", dest="lda_topics", action='store', type="int",
+                      help="Set the number of lda topics", metavar="LDATOPICS")
+    parser.add_option("-p", "--peers", dest="n_peers", action='store', type="int",
+                      help="Set the number of peer papers", metavar="PEERS")
+
     options, args = parser.parse_args()
     use_database = options.db is not None
     use_all = options.all is not None
     load_matrices = options.load is not None
     verbose = options.verbose is not None
     dump = options.dump is not None
-    train_more = options.train_more is not None
+    train_more = True
     random_seed = options.random_seed is not None
-
+    lda_topics = 50
+    n_peers = 2
     if random_seed is True:
         numpy.random.seed(int(time.time()))
-    runnable = RunnableRecommenders(use_database, verbose, load_matrices, dump, train_more, random_seed)
+    if options.lda_topics is not None:
+        lda_topics = options.lda_topics
+    if options.n_peers is not None:
+      n_peers = options.n_peers
+    runnable = RunnableRecommenders(use_database, verbose, load_matrices, dump, train_more, random_seed , lda_topics , n_peers)
     if use_all is True:
         runnable.run_ltr_recommender()
         sys.exit(0)

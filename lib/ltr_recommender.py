@@ -18,7 +18,7 @@ class LTRRecommender(object):
     """
       A class that takes in the Labeled rating matrix and theta(the output of LDA)
     """
-    def __init__(self,n_users,n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity, ratings):
+    def __init__(self,n_users,n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity, ratings, n_peers):
       """
       """
       self.n_users = n_users
@@ -29,6 +29,7 @@ class LTRRecommender(object):
       self.sparse_documents_similarity = sparse_documents_similarity
       self.test_indices = [None for user in range(n_users)]
       self.ratings = ratings
+      self.n_peers = n_peers
       #using random neg paper indices to experiment in predict
       #self.random_neg_indices= [None for user in range(n_users)]
 
@@ -44,7 +45,7 @@ class LTRRecommender(object):
       for user in range(self.n_users):
         user_rated_indices = numpy.where(train_data[user] == 1)[0]
         non_rated_indices = numpy.where(train_data[user] == 2)[0]
-        peers_per_paper = 2
+        peers_per_paper = self.n_peers
         user_rated_peer_matrix = None
         if (self.peerpaper_search_strategy == "paper_based"):
           user_rated_peer_matrix =  self.paper_based_peerpapers(user_rated_indices,peers_per_paper)

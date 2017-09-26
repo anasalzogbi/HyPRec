@@ -13,11 +13,11 @@ class Content_Analyser(object):
     """
 
     @staticmethod
-    def get_document_distribution(term_freq):
+    def get_document_distribution(term_freq ,lda_topics):
       """
         This function calculates the document distribution matrix and returns it
       """
-      lda = LatentDirichletAllocation(n_topics=20, max_iter=5,
+      lda = LatentDirichletAllocation(n_topics=lda_topics, max_iter=5,
                                       learning_method='online',
                                       learning_offset=50., random_state=0,
                                       verbose=0)
