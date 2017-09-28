@@ -95,7 +95,7 @@ class LTRRecommender(object):
       """
 
       user_rated_peer_matrix = numpy.zeros((user_rated_indices.size, peers_per_paper + 1))
-      user_rated_peer_matrix[:, 0] = user_rated_indices
+      user_rated_peer_matrix[:, 0] = user_rated_indices.copy()
       user_sorted_dense_document_similarity = numpy.argsort(self.sparse_documents_similarity[user_rated_indices].toarray())
       user_rated_peer_matrix[:, 1:] = user_sorted_dense_document_similarity[:, :peers_per_paper]
       user_rated_peer_matrix = user_rated_peer_matrix.astype(int)
@@ -112,9 +112,9 @@ class LTRRecommender(object):
       """
 
       user_rated_peer_matrix = numpy.zeros((user_rated_indices.size, peers_per_paper + 1))
-      user_rated_peer_matrix[:, 0] = user_rated_indices
+      user_rated_peer_matrix[:, 0] = user_rated_indices.copy()
       #todo:vectorize below code
-      for x in range(peers_per_paper):
+      for x in range(user_rated_indices.size):
         user_rated_peer_matrix[x, 1:] = numpy.random.choice(non_rated_indices,peers_per_paper,replace=False)
       user_rated_peer_matrix = user_rated_peer_matrix.astype(int)
 

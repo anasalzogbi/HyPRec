@@ -7,6 +7,7 @@ import numpy
 import math
 from sklearn.decomposition import LatentDirichletAllocation
 from util.top_recommendations import TopRecommendations
+import pandas as pd
 
 class LTR_Evaluator(object):
     """
@@ -16,7 +17,8 @@ class LTR_Evaluator(object):
       # stores recommended indices for each user.
       self.recommendation_indices = [[] for i in range(n_users)]
       self.ratings = ratings
-     
+      self.mrr_list = None
+      self.ndcg_list = None
         
     def generate_k_fold_test_mask(self,rating_matrix,k):
       """
@@ -79,7 +81,8 @@ class LTR_Evaluator(object):
           if mrr_index + 1 == n_recommendations:
             break
         mrr_list.append(mrr)
-
+        
+      self.mrr_list = mrr_list
       return numpy.mean(mrr_list, dtype=numpy.float16)
 
       
@@ -103,23 +106,34 @@ class LTR_Evaluator(object):
       return self.recommendation_indices
   
     def calculate_ndcg(self, n_recommendations, rounded_predictions):
-        """
-        The method calculates the normalized Discounted Cumulative Gain of all users
-        by only looking at the top n_recommendations.
-        :param int n_recommendations: number of recommendations to look at, sorted by relevance.
-        :param float[][] predictions: calculated predictions of the recommender
-        :returns: nDCG for n_recommendations
-        :rtype: float
-        """
-        ndcgs = []
-        for user in range(self.ratings.shape[0]):
-            dcg = 0
-            idcg = 0
-            for pos_index, index in enumerate( self.recommendation_indices[user] ):
-                dcg += (self.ratings[user, index] * rounded_predictions[user][index]) / numpy.log2(pos_index + 2)
-                idcg += 1 / numpy.log2(pos_index + 2)
-                if pos_index + 1 == n_recommendations:
-                    break
-            if idcg != 0:
-                ndcgs.append(dcg / idcg)
-        return numpy.mean(ndcgs, dtype=numpy.float16)  
+      """
+      The method calculates the normalized Discounted Cumulative Gain of all users
+      by only looking at the top n_recommendations.
+      :param int n_recommendations: number of recommendations to look at, sorted by relevance.
+      :param float[][] predictions: calculated predictions of the recommender
+      :returns: nDCG for n_recommendations
+      :rtype: float
+      """
+      ndcgs = []
+      for user in range(self.ratings.shape[0]):
+          dcg = 0
+          idcg = 0
+          for pos_index, index in enumerate( self.recommendation_indices[user] ):
+              dcg += (self.ratings[user, index] * rounded_predictions[user][index]) / numpy.log2(pos_index + 2)
+              idcg += 1 / numpy.log2(pos_index + 2)
+              if pos_index + 1 == n_recommendations:
+                  break
+          if idcg != 0:
+              ndcgs.append(dcg / idcg)
+              
+      self.ndcg_list = ndcgs
+      return numpy.mean(ndcgs, dtype=numpy.float16)  
+      
+    def dump_results(self,result_dump_filename):
+      """
+      This method takes mrr list and ndcg lis of users and make a csv file out of them
+      """
+      df = pd.DataFrame( { "mrr": self.mrr_list ,"nDcg":self.ndcg_list});
+      df.loc["avg"] = df.mean()
+      df.to_csv(result_dump_filename)
+      

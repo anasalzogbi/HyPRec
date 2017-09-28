@@ -28,7 +28,7 @@ class RunnableRecommenders(object):
         """
         Setup the data and configuration for the recommenders.
         """
-        dataParser = DataParser(10)
+        dataParser = DataParser()
         if use_database:           
             self.ratings = numpy.array(dataParser.get_ratings_matrix())
             word_to_count, article_to_word,article_to_word_to_count = dataParser.get_word_distribution()
@@ -63,7 +63,6 @@ class RunnableRecommenders(object):
         self.n_users,self.n_docs = self.ratings.shape
         #initialising the ltr evaluator
         self.evaluator_ltr = LTR_Evaluator(self.n_users,self.ratings)
-
         articles, words, counts = zip(*article_to_word_to_count)
         num_items = self.n_docs
         num_vocab = max(map(lambda inp: inp[0], word_to_count)) + 1
@@ -74,35 +73,59 @@ class RunnableRecommenders(object):
     def run_ltr_recommender(self):
         from lib.ltr_recommender import LTRRecommender 
         from lib.content_analyser import Content_Analyser 
-        
+        import os
+        import scipy
+        import pandas as pd
         """
         Runs LTR Recommender
         """
         n_folds = 5
-        #peerpaper_search_strategy = "random"
-        peerpaper_search_strategy = "paper_based"
+        peerpaper_search_strategy = "random"
+        #peerpaper_search_strategy = "paper_based"
 
         #k_fold_test_mask: boolean mask of shape (n_folds,n_users,n_docs)
         k_fold_test_mask = self.evaluator_ltr.generate_k_fold_test_mask(self.ratings,n_folds)
-
-        theta = Content_Analyser.get_document_distribution(self.term_freq,self.lda_topics)
+        
+        theta_dump = "dump/theta_topics_"+str(self.lda_topics)+"_users_"+str(self.n_users)
+        if os.path.isfile(theta_dump):
+          theta = numpy.load(theta_dump)
+        else:
+          theta = Content_Analyser.get_document_distribution(self.term_freq,self.lda_topics)
+          f = open(theta_dump,"wb")
+          numpy.save(f,theta)
+          f.close()
         #sorted_documents_similarity: matrix of document to document similarity ofshape(n_docs,n_docs)
         sparse_documents_similarity = None
-
+        
         if(peerpaper_search_strategy == "paper_based"):
+          simlarity_dump = "dump/similarity_dump_"+str(self.lda_topics)+"_users_"+str(self.n_users)
+          if os.path.isfile(simlarity_dump):
+            sparse_documents_similarity = scipy.sparse.load_npz(simlarity_dump)
+          else:        
             sparse_documents_similarity = Content_Analyser.get_sorted_cosine_sim(theta)
-
+            f = open(simlarity_dump,"wb")
+            scipy.sparse.save_npz(f,sparse_documents_similarity)
+            f.close()
+            
         for fold in range(n_folds):
-          ltr_recommender = LTRRecommender(self.n_users,self.n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity ,self.ratings,self.n_peers)
-          ltr_recommender.train(k_fold_test_mask[fold])
-          predictions, prediction_scores = ltr_recommender.predict(k_fold_test_mask[fold])
-          mrr_at_five = self.evaluator_ltr.calculate_mrr(5,predictions , prediction_scores , k_fold_test_mask[fold])
-          ndcg_at_five = self.evaluator_ltr.calculate_ndcg(5,predictions)
-          report_str = "Report : mrr@5 {:.5f} , ndcg@5 {:.5f} "
-          print(report_str.format(mrr_at_five,ndcg_at_five))
-          predictions = None
-          prediction_scores = None
-          ltr_recommender = None
+          result_dump_filename = "dump/results_fold_"+str(fold)+"_lda_"+str(self.lda_topics)+"_peers_"+str(self.n_peers)+"_strategy_"+peerpaper_search_strategy
+          if os.path.isfile(result_dump_filename):
+            df = pd.read_csv(result_dump_filename)
+            report_str = "Report : mrr@5 {:.5f} , ndcg@5 {:.5f} "
+            print(report_str.format(df.iloc[-1]["mrr"],df.iloc[-1]["nDcg"]))
+          else:
+            ltr_recommender = LTRRecommender(self.n_users,self.n_docs,theta,peerpaper_search_strategy,sparse_documents_similarity ,self.ratings,self.n_peers)
+            ltr_recommender.train(k_fold_test_mask[fold])
+            predictions, prediction_scores = ltr_recommender.predict(k_fold_test_mask[fold])
+            mrr_at_five = self.evaluator_ltr.calculate_mrr(5,predictions , prediction_scores , k_fold_test_mask[fold])
+            ndcg_at_five = self.evaluator_ltr.calculate_ndcg(5,predictions)
+            
+            self.evaluator_ltr.dump_results(result_dump_filename)
+            report_str = "Report : mrr@5 {:.5f} , ndcg@5 {:.5f} "
+            print(report_str.format(mrr_at_five,ndcg_at_five))
+            predictions = None
+            prediction_scores = None
+            ltr_recommender = None
 
 
 if __name__ == '__main__':
